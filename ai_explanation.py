@@ -3,19 +3,18 @@ import google.genai as genai
 from sqlalchemy import create_engine, text
 import time
 import warnings
+import os
 warnings.filterwarnings("ignore")
  
-# ────────────────────────────────────────────────────────────
-# CONFIG — update your credentials
-# ────────────────────────────────────────────────────────────
-GEMINI_API_KEY = "AQ.Ab8RN6JuWBuBJbZcCIWhLFWILsT4fasFADHgMNnWRJ0aSihy1w"  
+
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
  
 DB_CONFIG = {
     "host":     "127.0.0.1",
     "port":     5432,
     "database": "postgres",
     "user":     "postgres",
-    "password": "2004"
+ "password": os.getenv("DB_PASSWORD")   
 }
  
 engine = create_engine(
@@ -23,12 +22,10 @@ engine = create_engine(
     f"@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
 )
  
-# Configure Gemini
+
 client = genai.Client(api_key=GEMINI_API_KEY)
  
-# ────────────────────────────────────────────────────────────
-# FETCH HIGH & MEDIUM RISK PATIENTS ONLY
-# ────────────────────────────────────────────────────────────
+
 def fetch_risk_patients():
     query = """
         SELECT
@@ -64,10 +61,7 @@ def fetch_risk_patients():
     df = pd.read_sql(query, engine)
     print(f"Found {len(df)} patients needing AI explanation.")
     return df
- 
-# ────────────────────────────────────────────────────────────
-# BUILD PROMPT
-# ────────────────────────────────────────────────────────────
+
 def build_prompt(row):
     return f"""You are a clinical AI assistant. Write a brief 2-3 sentence plain-language explanation of this patient's health risk for a doctor.
  
@@ -89,9 +83,7 @@ Risk Scores:
  
 Write a concise clinical summary explaining the key risk factors and what to monitor. Be direct and professional."""
  
-# ────────────────────────────────────────────────────────────
-# GENERATE EXPLANATION & UPDATE SQL
-# ────────────────────────────────────────────────────────────
+
 def generate_and_save(df):
     success = 0
     failed  = 0
@@ -116,7 +108,7 @@ def generate_and_save(df):
             success += 1
             print(f"  [{success}] Patient {int(row['patient_id'])} — {row['readmission_tier']} readmission risk ✓")
  
-            # Rate limiting — Gemini free tier: 15 requests/min
+           
             time.sleep(10)
  
         except Exception as e:
@@ -126,9 +118,7 @@ def generate_and_save(df):
  
     print(f"\n✅ Done! {success} explanations generated, {failed} failed.")
  
-# ────────────────────────────────────────────────────────────
-# MAIN
-# ────────────────────────────────────────────────────────────
+
 def main():
     print("Starting AI Explanation Layer...")
     print("Using: Google Gemini 2.0 Flash (free tier)\n")
@@ -142,7 +132,7 @@ def main():
     print(f"Generating explanations for {len(df)} patients...\n")
     generate_and_save(df)
  
-    # Preview results
+ 
     with engine.connect() as conn:
         sample = pd.read_sql(
             "SELECT patient_id, readmission_tier, deterioration_tier, ai_explanation FROM risk_scores WHERE ai_explanation IS NOT NULL LIMIT 3",
