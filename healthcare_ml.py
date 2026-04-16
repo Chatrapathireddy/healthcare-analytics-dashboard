@@ -14,7 +14,7 @@ import os
 
 warnings.filterwarnings("ignore")
 
-# ---------------- DATABASE (SAFE) ----------------
+
 DB_CONFIG = {
     "host": "127.0.0.1",
     "port": 5432,
@@ -28,7 +28,7 @@ engine = create_engine(
     f"@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
 )
 
-# ---------------- EXTRACT ----------------
+-
 def extract_data():
     query = """
         SELECT
@@ -91,7 +91,7 @@ def extract_data():
     print(f"Extracted {len(df)} records")
     return df
 
-# ---------------- PREPROCESS ----------------
+
 def preprocess(df):
     le = LabelEncoder()
 
@@ -156,7 +156,7 @@ def train_model(X, y, name):
 
     return pipe
 
-# ---------------- SCORE ----------------
+
 def score_patients(df, features, models):
     records = []
 
@@ -192,7 +192,7 @@ def score_patients(df, features, models):
     print(f"\nWrote {len(scores_df)} risk scores")
     return scores_df
 
-# ---------------- MAIN ----------------
+
 def main():
     df = extract_data()
     X, df_clean = preprocess(df)
