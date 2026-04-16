@@ -1,7 +1,4 @@
-# ============================================================
-#  HEALTHCARE ANALYTICS & RISK PREDICTION SYSTEM
-#  Data Loader — Maps healthcare_dataset.csv → PostgreSQL
-# ============================================================
+
 
 import pandas as pd
 import numpy as np
@@ -12,9 +9,7 @@ import warnings
 import os
 warnings.filterwarnings("ignore")
 
-# ────────────────────────────────────────────────────────────
-# CONFIG — update your DB credentials here
-# ────────────────────────────────────────────────────────────
+
 DB_CONFIG = {
     "host":      "127.0.0.1",
     "port":     5432,
@@ -33,9 +28,7 @@ engine = create_engine(
 random.seed(42)
 np.random.seed(42)
 
-# ────────────────────────────────────────────────────────────
-# LOAD CSV
-# ────────────────────────────────────────────────────────────
+
 print("Loengine ading CSV...")
 df = pd.read_csv(CSV_PATH)
 df.columns = df.columns.str.strip()
@@ -43,9 +36,6 @@ df['Date of Admission'] = pd.to_datetime(df['Date of Admission'])
 df['Discharge Date']    = pd.to_datetime(df['Discharge Date'])
 print(f"  {len(df)} rows loaded.")
 
-# ────────────────────────────────────────────────────────────
-# 1. PATIENTS
-# ────────────────────────────────────────────────────────────
 print("\nInserting patients...")
 
 def estimate_dob(age):
@@ -75,9 +65,7 @@ print(f"  {len(patients_insert)} patients inserted.")
 # Build name → patient_id map
 name_to_id = dict(zip(patients_df['Name'].str.title(), patients_df['patient_id']))
 
-# ────────────────────────────────────────────────────────────
-# 2. ADMISSIONS
-# ────────────────────────────────────────────────────────────
+
 print("\nInserting admissions...")
 
 df['full_name'] = df['Name'].str.title()
@@ -116,9 +104,7 @@ admissions_insert = admissions_df[['admission_id','patient_id','admission_date',
 admissions_insert.to_sql('admissions', engine, if_exists='append', index=False, method='multi')
 print(f"  {len(admissions_insert)} admissions inserted.")
 
-# ────────────────────────────────────────────────────────────
-# 3. DIAGNOSES
-# ────────────────────────────────────────────────────────────
+
 print("\nInserting diagnoses...")
 
 icd10_map = {
@@ -143,9 +129,7 @@ diagnoses_insert = diagnoses_df[['diagnosis_id','admission_id','patient_id',
 diagnoses_insert.to_sql('diagnoses', engine, if_exists='append', index=False, method='multi')
 print(f"  {len(diagnoses_insert)} diagnoses inserted.")
 
-# ────────────────────────────────────────────────────────────
-# 4. VITALS (generated realistically per condition)
-# ────────────────────────────────────────────────────────────
+
 print("\nInserting vitals...")
 
 def generate_vitals(row):
@@ -185,9 +169,7 @@ vitals_insert = vitals_df[['vital_id','patient_id','admission_id','recorded_at',
 vitals_insert.to_sql('vitals', engine, if_exists='append', index=False, method='multi')
 print(f"  {len(vitals_insert)} vitals inserted.")
 
-# ────────────────────────────────────────────────────────────
-# 5. LAB RESULTS
-# ────────────────────────────────────────────────────────────
+
 print("\nInserting lab results...")
 
 lab_templates = {
@@ -227,9 +209,7 @@ labs_insert = pd.DataFrame(lab_records)
 labs_insert.to_sql('lab_results', engine, if_exists='append', index=False, method='multi')
 print(f"  {len(labs_insert)} lab results inserted.")
 
-# ────────────────────────────────────────────────────────────
-# 6. MEDICATIONS
-# ────────────────────────────────────────────────────────────
+
 print("\nInserting medications...")
 
 dosage_map = {
@@ -259,9 +239,7 @@ meds_insert = meds_df[['medication_id','patient_id','admission_id','drug_name',
 meds_insert.to_sql('medications', engine, if_exists='append', index=False, method='multi')
 print(f"  {len(meds_insert)} medications inserted.")
 
-# ────────────────────────────────────────────────────────────
-# DONE
-# ────────────────────────────────────────────────────────────
+
 print("\n All data loaded successfully into healthcare_db!")
 print("   Tables populated: patients, admissions, diagnoses, vitals, lab_results, medications")
 print("   Next step: run healthcare_ml.py to train models and generate risk scores.")
